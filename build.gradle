@@ -1,0 +1,142 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+    }
+}
+plugins {
+    // this version works on gradle 4.9
+    // more recent versions of shadow work on more recent versions of gradle
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'net.minecraftforge.gradle'
+
+
+version = '1.0'
+group = 'fr.alphadesnoc.pixelmongocine' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'PixelmonGoCinematics'
+
+java {
+    sourceCompatibility = JavaLanguageVersion.of(8)
+    targetCompatibility = JavaLanguageVersion.of(8)
+}
+
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+minecraft {
+
+    mappings channel: 'snapshot', version: '20210309-1.16.5'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                pixelmongocine {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                pixelmongocine {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'pixelmongocine', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            mods {
+                pixelmongocine {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    flatDir {
+        dir './libs'
+    }
+}
+
+configurations {
+    shade
+    implementation.extendsFrom shade
+}
+
+dependencies {
+
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.39'
+    implementation fileTree(dir: "libs", include: "Watermedia.jar")
+}
+
+jar {
+    archiveClassifier = 'slim'
+    manifest {
+        attributes([
+                "Specification-Title"     : "PixelmonGoCinematics",
+                "Specification-Vendor"    : "PixelmonGoCinematics",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.version,
+                "Implementation-Vendor"   : "PixelmonGoCinematics",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.shade]
+    finalizedBy 'reobfShadowJar'
+}
+
+assemble.dependsOn shadowJar
+
+reobf {
+    shadowJar {}
+}
+
+jar.finalizedBy('reobfJar')
+
+task copyFileToClient(type: Copy) {
+    from 'C:/Users/alpha/Desktop/Workspace/Workspace_Java/Clients/PixelmonGo/CinematicMod/build/libs'
+    into 'C:/Users/alpha/Desktop/MultiMC/instances/Test/.minecraft/mods'
+    include 'PixelmonGoCinematics-1.0.jar'
+}
+
+task copyFileToServer(type: Copy) {
+    from 'C:/Users/alpha/Desktop/Workspace/Workspace_Java/Clients/PixelmonGo/CinematicMod/build/libs'
+    into 'C:/Users/alpha/Desktop/Serveurs/PixelmonGo - Copie/mods'
+    include 'PixelmonGoCinematics-1.0.jar'
+}
+
+task copyFile() {
+    dependsOn copyFileToClient, copyFileToServer
+}
